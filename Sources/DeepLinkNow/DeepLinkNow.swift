@@ -3,6 +3,7 @@ import Foundation
 import CoreTelephony
 import AdSupport
 import AppTrackingTransparency
+import WebKit
 
 public final class DeepLinkNow {
     private static var shared: DeepLinkNow?
@@ -11,6 +12,7 @@ public final class DeepLinkNow {
     private let installTime: String
     private var initResponse: InitResponse?
     private var validDomains: Set<String> = []
+    private var safariOSVersion: String?
     
     private init(config: DLNConfig, urlSession: URLSessionProtocol = URLSession.shared) {
         self.config = config
@@ -60,10 +62,40 @@ public final class DeepLinkNow {
         return simpleHash(fingerprintString)
     }
     
+    /// Resolves the OS version as reported by Safari's user agent.
+    /// On iOS 26+, Safari freezes the UA version to 18.x, which differs from
+    /// UIDevice.current.systemVersion. We need to match what the web side captured.
+    @MainActor
+    private func resolveSafariOSVersion() async -> String {
+        let webView = WKWebView(frame: .zero)
+        do {
+            let ua = try await webView.evaluateJavaScript("navigator.userAgent") as? String ?? ""
+            if let match = ua.range(of: #"CPU (?:iPhone )?OS (\d+[_\.]\d+(?:[_\.]\d+)?)"#, options: .regularExpression) {
+                let fullMatch = String(ua[match])
+                // Extract just the version part after "OS "
+                if let osRange = fullMatch.range(of: #"(\d+[_\.]\d+(?:[_\.]\d+)?)"#, options: .regularExpression) {
+                    return String(fullMatch[osRange]).replacingOccurrences(of: "_", with: ".")
+                }
+            }
+        } catch {
+            // Fall back to system version if WKWebView fails
+        }
+        return UIDevice.current.systemVersion
+    }
+
     public static func initialize(config: DLNConfig, urlSession: URLSessionProtocol = URLSession.shared) async {
         let instance = DeepLinkNow(config: config, urlSession: urlSession)
         shared = instance
-        
+
+        // On iOS 26+, Safari freezes the UA version to 18.x while
+        // UIDevice.current.systemVersion returns the real version (e.g. 26.3.1).
+        // Resolve Safari's reported version so fingerprints match the web side.
+        if #available(iOS 26.0, *) {
+            instance.safariOSVersion = await instance.resolveSafariOSVersion()
+            instance.log("Resolved Safari OS version:", instance.safariOSVersion ?? "nil",
+                          "System version:", UIDevice.current.systemVersion)
+        }
+
         instance.log("Initializing with config:", config)
         
         do {
@@ -111,8 +143,14 @@ public final class DeepLinkNow {
 
         let currentTime = dateFormatter.string(from: Date())
 
-        // Generate user agent string that matches web format
-        let userAgent = "Mozilla/5.0 (\(device.model); CPU iOS \(device.systemVersion) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(device.systemVersion) Mobile/15E148 Safari/604.1"
+        // Use Safari's reported OS version for fingerprint matching.
+        // On iOS 26+, Safari freezes the UA version to 18.x while
+        // UIDevice.current.systemVersion returns the real version (e.g. 26.3.1).
+        let osVersion = safariOSVersion ?? device.systemVersion
+        let osVersionUA = osVersion.replacingOccurrences(of: ".", with: "_")
+
+        // Generate user agent string that matches Safari's actual format
+        let userAgent = "Mozilla/5.0 (\(device.model); CPU iPhone OS \(osVersionUA) like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/\(osVersion) Mobile/15E148 Safari/604.1"
 
         // Determine device model based on device type, matching web implementation
         let deviceModel: String
@@ -133,15 +171,22 @@ public final class DeepLinkNow {
         let screenHeight = Int(screen.bounds.height)
         let pixelRatio = round(Double(screen.scale) * 100) / 100 // Round to 2 decimal places
 
-        // Get full locale identifier (e.g., "en-US" instead of just "en")
-        // Convert from underscore format (en_US) to hyphen format (en-US) to match web/RN
-        let language = Locale.current.identifier.replacingOccurrences(of: "_", with: "-")
+        // Get BCP 47 language tag (e.g., "en-US") to match Safari's navigator.language.
+        // Locale.current.identifier can return extended identifiers like "en_US@rg=plzzzz"
+        // which breaks fingerprint matching against web values.
+        let language: String = {
+            let languageCode = Locale.current.language.languageCode?.identifier ?? "en"
+            if let regionCode = Locale.current.language.region?.identifier {
+                return "\(languageCode)-\(regionCode)"
+            }
+            return languageCode
+        }()
         let timezone = TimeZone.current.identifier
 
         // Generate hardware fingerprint using the same algorithm as web
         let hardwareFingerprint = generateHardwareFingerprint(
             platform: "ios",
-            osVersion: device.systemVersion,
+            osVersion: osVersion,
             screenWidth: screenWidth,
             screenHeight: screenHeight,
             pixelRatio: pixelRatio,
@@ -165,7 +210,7 @@ public final class DeepLinkNow {
             ipAddress: "", // Will be set by server
             userAgent: userAgent,
             platform: "ios",
-            osVersion: device.systemVersion,
+            osVersion: osVersion,
             deviceModel: deviceModel,
             language: language,
             timezone: timezone,

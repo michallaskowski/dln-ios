@@ -102,4 +102,4 @@ ehthumbs.db
 Thumbs.db
 
 # Deployment documentation (contains sensitive information)
-DEPLOYMENTS.md
+DEPLOYMENTS.md.build/
