@@ -31,10 +31,9 @@ public final class DeepLinkNow {
     }
 
     private func simpleHash(_ str: String) -> String {
-        var hash: Int = 0
+        var hash: Int32 = 0
         for char in str.unicodeScalars {
-            hash = ((hash << 5) &- hash) &+ Int(char.value)
-            hash = hash & hash // Convert to 32bit integer
+            hash = ((hash &<< 5) &- hash) &+ Int32(char.value)
         }
         return String(hash, radix: 16)
     }
@@ -48,12 +47,18 @@ public final class DeepLinkNow {
         language: String,
         timezone: String
     ) -> String {
+        // Format pixelRatio to match JavaScript's String() behavior:
+        // JS: String(3) → "3", but Swift: String(3.0) → "3.0"
+        let pixelRatioString = pixelRatio.truncatingRemainder(dividingBy: 1) == 0
+            ? String(Int(pixelRatio))
+            : String(pixelRatio)
+
         let components = [
             platform,
             osVersion,
             String(screenWidth),
             String(screenHeight),
-            String(pixelRatio),
+            pixelRatioString,
             language,
             timezone
         ]
