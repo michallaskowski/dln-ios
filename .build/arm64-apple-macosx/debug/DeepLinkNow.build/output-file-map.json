@@ -1,0 +1,19 @@
+{
+  "": {
+    "swift-dependencies": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/master.swiftdeps"
+  },
+  "/private/tmp/dln-ios/Sources/DeepLinkNow/DeepLinkNow.swift": {
+    "dependencies": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/DeepLinkNow.d",
+    "object": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/DeepLinkNow.swift.o",
+    "swiftmodule": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/DeepLinkNow~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/DeepLinkNow.swiftdeps",
+    "diagnostics": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/DeepLinkNow.dia"
+  },
+  "/private/tmp/dln-ios/Sources/DeepLinkNow/Models.swift": {
+    "dependencies": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/Models.d",
+    "object": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/Models.swift.o",
+    "swiftmodule": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/Models~partial.swiftmodule",
+    "swift-dependencies": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/Models.swiftdeps",
+    "diagnostics": "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/Models.dia"
+  }
+}

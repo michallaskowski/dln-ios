@@ -1,0 +1,3 @@
+module DeepLinkNowPackageTests {
+    header "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNowPackageTests.build/include/DeepLinkNowPackageTests-Swift.h"
+}

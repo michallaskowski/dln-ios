@@ -175,11 +175,14 @@ public final class DeepLinkNow {
         // Locale.current.identifier can return extended identifiers like "en_US@rg=plzzzz"
         // which breaks fingerprint matching against web values.
         let language: String = {
-            let languageCode = Locale.current.language.languageCode?.identifier ?? "en"
-            if let regionCode = Locale.current.language.region?.identifier {
-                return "\(languageCode)-\(regionCode)"
+            if #available(iOS 16, *) {
+                let languageCode = Locale.current.language.languageCode?.identifier ?? "en"
+                if let regionCode = Locale.current.language.region?.identifier {
+                    return "\(languageCode)-\(regionCode)"
+                }
+                return languageCode
             }
-            return languageCode
+            return Locale.current.identifier.replacingOccurrences(of: "_", with: "-")
         }()
         let timezone = TimeZone.current.identifier
 

@@ -1,0 +1,3 @@
+module DeepLinkNow {
+    header "/private/tmp/dln-ios/.build/arm64-apple-macosx/debug/DeepLinkNow.build/include/DeepLinkNow-Swift.h"
+}
