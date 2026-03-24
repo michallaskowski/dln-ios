@@ -103,3 +103,4 @@ Thumbs.db
 
 # Deployment documentation (contains sensitive information)
 DEPLOYMENTS.md.build/
+.build/
